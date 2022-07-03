@@ -1,0 +1,25 @@
+事件循环接口 EventLoop
+              |-OrderedEventExecutor //netty包工具类，它的
+                          //inEventLoop(Thread thread)判断该线程是否属于此EventLoop
+                          //parent()返回其所属的EventLoopGroup
+              |---EventExecutor
+              |-----EventExecutorGroup //io.netty.u.c.EventExecutorGroup,netty包工具类
+              |-------j.u.c.ScheduledExecutorService
+              |-------Iterable<EventExecutor>
+              |-EventLoopGroup
+              |---EventExecutorGroup
+              |-----j.u.c.ScheduledExecutorService  //包含线程池所有方法
+              |-----Iterable<EventExecutor>
+EventLoop就一个单线程执行器(同时维护一个Selector)，他的run()处理一个或者多个channel上源源不绝的io事件
+
+事件循环组接口 EventLoopGroup
+EventLoopGroup是一组EventLoop，Channel一般会调用EventLoopGroup的register来绑定一个EventLoop
+后续这个channel的io事件由此EventLoop负责(保证io处理时的安全性)
+              EventLoopGroup
+              |-EventExecutorGroup //io.netty.u.c.EventExecutorGroup,netty包工具类
+              |---j.u.c.ScheduledExecutorService
+              |---Iterable<EventExecutor>
+
+EventExecutorGroup实现Iterable接口，提供
+iterator()遍历EventLoop能力
+next()获取下一个EventLoop

@@ -1,0 +1,13 @@
+pipeline结构
+泛型为Handler、带有head和tail节点的双向链表，实际结构为
+head<-> inboud handler1<-> ... <-> outbound handler4 <-> tail
+
+handler的方法都通过ctx.fireChannelRead(msg)将信息传到下一个handler；
+当有入站(inbound)操作，会从head开始向后调用handler，知道handler不是处理inbound为止；
+当有出站(outbound)操作，会从tail开始向前调用handler，知道handler不是处理outbound为止；
+
+什么时候触发出站(outbound)操作？
+inbound中调用socketChannel.writeAndFlush(xx);
+
+
+

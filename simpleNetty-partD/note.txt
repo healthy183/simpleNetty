@@ -1,0 +1,7 @@
+simpleNetty-partD 自定义聊天室
+*client包：存放客户端相关类
+*message包：存放各种类型的消息
+*protocol包：存放自定义协议
+*server包：存放服务器相关类
+    service包：存放用户相关类
+    session包：单聊及群聊相关会话类

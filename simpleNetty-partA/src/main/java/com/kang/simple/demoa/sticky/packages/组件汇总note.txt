@@ -1,0 +1,17 @@
+* channel 数据传输通道
+* msg理解为流动数据，最初输入是ByteBuf,进过pipeline中的handler加工
+成指定对象，最后出参又转成ByteBuf
+* handler(处理器)可以理解而为数据的处理工序
+    。工序有多道，合在一起就是pipeline(传输途径)，pipeline负责发布事件
+(读、读取完成)，传输给每个handler,handler对自己感兴趣进行处理(重新响应处理方法)
+        *pipeline中有很多handler，处理时会依次调用
+    。handler分inbound和Outbound两类
+        *inbound入站
+        *outbound出站
+* eventLoop可以理解为处理数据的工人(单线程执行器，维护一个Selector)
+   。eventLoop可以管理多个channel的IO操作，并且一旦eventLoop负责某个channel，
+就会跟channel绑定，以后该channel中的io操作都由该eventLoop负责
+   。eventLoop既可以执行io操作，也可以进行任务处理，每个eventLoop有自己的任务队列，
+队列里可以堆放多个channel的待处理任务，任务分为普通任务、定时任务
+  。eventLoop按照pipeline顺序，一次按照handler规划(代码)顺序处理数据，可以为
+每个handler指定不同的eventLoop

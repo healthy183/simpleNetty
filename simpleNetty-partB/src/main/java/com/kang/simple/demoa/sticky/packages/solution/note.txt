@@ -1,0 +1,56 @@
+解决粘包与半包
+方案1，客户端短链接发送(StickyPackagesServer、StickyPackagesSolutionClient.java)
+   客户端每次向服务端发送数据以后即断开连接，此时数据边界为连接建立到连接断开；
+   这时便无需使用滑动窗口等技术来缓冲数据，则把不会出现粘包问题；
+   缺点：如果发送数据过大，服务端会出现半包问题；
+
+以下运行日志可见未出现粘包现象
+连接上以后：
+[Slf4JLogger.java:71]  REGISTERED
+[Slf4JLogger.java:71]  ACTIVE
+读取以后
+[Slf4JLogger.java:71]  READ COMPLETE
+[Slf4JLogger.java:71]  INACTIVE
+
+方案2，定长解码器
+客户端与服务器约定一个最大长度，保证客户端每次发送的数据长度都不会大于该长度；
+若发送数据长度不足怎需要补齐至该长度；
+
+服务器接收数据时，将接收到的数据按照约定的最大长度进行拆分，即使发送过程发生粘包，
+也可以通过定长解码器将数据正确地进行拆分。
+服务端需要用到FixedLengthFrameDecoder对数据进行定长解码，如下：
+ch.pipeline().addLast(new FixedLengthFrameDecoder(16));
+
+方案3，行解码器
+行解码器的是通过分隔符对数据进行拆分来解决粘包半包问题
+3.1，通过LineBasedFrameDecoder(int maxLength)来拆分以换行符(\n)的分隔符数据
+3.2，也可以通过DelimiterBasedFrameDecoder(int maxFrameLength, ByteBuf... delimiters)
+来指定通过什么分隔符来拆分数据(可以传入多个分隔符)
+注意：两种解码器都需要传入数据的最大长度，若超过最大长度，会抛出TooLongFrameException
+
+方案4，长度字段解码器
+在传送数据时可以在数据中添加一个用于表示有用数据长度的字段，在解码器时读取出这位个用于
+表明长度的字段，同时读取其他相关参数，即得到最终需要的数据
+LengthFieldBasedFrameDecoder支持众多拆分方法，起构造方法如下：
+public LengthFieldBasedFrameDecoder(
+    int maxFrameLength,
+    int lengthFieldOffset, int lengthFieldLength,
+    int lengthAdjustment, int initialBytesToStrip)
+参数解释：
+    maxFrameLength -数据最大长度
+    lengthFieldOffset -数据长度标识的起始偏移量
+        *用于指明数据的第几个字节开始是用于标识有用字节长度，因为前面可以能包含附件信息
+    lengthFieldLength -数据长度标识所占字节数(用于指明有用数据的长度)
+        *数据中用于表示有用数据长度的标识所占字符串
+    lengthAdjustment -长度表示与有用数据的偏移量
+        *用于指明数据长度标识与有用数据之间的距离，因为两者之间还可能有附加信息
+    initialBytesToStrip -数据读取起点
+        * 读取起点，不读取0~initialBytesToStrip之间的数据
+
+initialBytesToStrip
+↓                    |   lengthFieldLength |                   |              |              |
++--------------------|---------------------|-------------------|--------------|--------------+
+|     附加信息        |        长度标识      |      附加信息      | 具体数据      |未用长度       |
++--------------------|--------------------------------------------------------|--------------+
+|  lengthFieldOffset |                     | lengthAdjustment  |                             |
++---------------------------------------maxFrameLength---------------------------------------+

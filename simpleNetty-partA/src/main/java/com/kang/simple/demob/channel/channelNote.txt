@@ -1,0 +1,10 @@
+channel常用方法
+*close()关闭channel
+*closeFuture()用来处理Channel的关闭
+     。sync()方法作用是同步等待channel关闭
+     。而addListener()异步等待channel关闭
+*pipeline添加handler(处理器)
+*write()写入数据
+    。因为默认缓冲机制，数据被写入到channel不会马上发送
+    。只有当缓冲满或者调用flush()以后才发送到channel
+*writeAndFlush()将数据写入并马上发送

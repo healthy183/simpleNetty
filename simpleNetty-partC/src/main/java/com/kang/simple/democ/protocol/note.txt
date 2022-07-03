@@ -1,0 +1,29 @@
+自定义协议
+
+TCP/IP中消息传输基于流的方式，没有边界
+所有协议的目的就是划分消息的边界，制定通信双方共同遵守的通信规则
+
+Redis协议 RedisClient.java
+如果我们要向Redis中发送一条set name healthy 的指令，需要遵守的协议如下：
+
+//该指令一共有3部分，每条指令之后都要添加回车与换行符
+*3\r\n  //第一个指令长度为3
+$3\r\n
+
+//下一个指令就是set指令
+set\r\n
+
+//下面指令如此类推
+$4\r\n
+name\r\n
+$5\r\n
+healthy\r\n
+
+http协议 HttpServer.java
+
+自定义协议  MessageCodec.java
+
+channel中共享使用handler
+MessageCodecShareable
+
+

@@ -1,0 +1,26 @@
+Future与Promise
+
+netty中Future与jdk的Future同名，都是接口
+
+netty的future继承自jdk的Future，而Promise又对netty Future进行扩展
+* jdk Future只能同步等待任务结束(不论成功与否)，然后才返回；
+* netty Future既可以同步等待结果，也可以异步等待结果，但都等待任务结束；
+* netty Promise不仅有netty Future功能，而且脱离任务独立存在，只能作为两个线程
+之间传递结果的容器
+
+方法对比：
+|  方法   | jdk  |  netty Future |Promise |
+|  ----  | ----  |         ----   |----  |
+| cancel  | 取消任务 |           | |
+| isCanceled | 任务是否取消 |           |
+| isDone | 任务是否完成，不能区分成功与否 |           |
+| get | 阻塞等待任务结果 |           |
+| getNow | - |马上获取任务，无结果则返回null  | |
+| await | - |等待任务结束，错误也不抛异常，可以通过isSuccess判断  | |
+| sync | - |等待任务结束，错误则抛异常| |
+| isSuccess | - |判断任务是否成功| |
+| cause | - |获取失败原因，非阻塞，无结果则返回null| |
+|addLinstener | - |添加监听器，异步返回结果| |
+|addLinstener | - |添加监听器，异步返回结果| |
+|setSuccess | - ||设置成功结果 |
+|setFailure | - ||设置失败结果 |

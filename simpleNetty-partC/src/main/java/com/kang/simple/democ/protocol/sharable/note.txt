@@ -1,0 +1,36 @@
+一，场景
+为了提高handler的复用率，可以将handler创建为handler对象，然后在不同的channel中使用该handler
+***
+LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
+// 不同的channel中使用同一个handler对象，提高复用率
+channel1.pipeline().addLast(loggingHandler);
+channel2.pipeline().addLast(loggingHandler);
+***
+
+二，问题：
+但是并不是所有handler都可行，例如 LengthFieldBasedFrameDecoder
+如果多个channel中使用同一个LengthFieldBasedFrameDecoder对象，则可能发生以下问题：
+* channel1中收到一个半包，LengthFieldBasedFrameDecoder发现不是一条完整的数据就没有往下传播
+* 此时channel2中也收到一个半包，因为两个channel公用同一LengthFieldBasedFrameDecoder，
+组成一个完整的包，则会触发数据往下传播，导致错误。
+
+三，解决方案：
+对此netty原生handler提供了@Sharable来注明该handler可以在多个channel中共享；
+
+四，自定义@Sharable的handler
+
+这需要根据自定义的handler的处理逻辑进行分析
+我们的MessageCodec本身接收的是LengthFieldBasedFrameDecoder处理之后的数据，那么数据肯定是完整的，按分析来说是可以添加@Sharable注解的
+但是实际情况我们并不能添加该注解，会抛出异常信息ChannelHandler cn.nyimac.study.day8.protocol.MessageCodec is not allowed to be shared
+因为MessageCodec继承自ByteToMessageCodec，ByteToMessageCodec类的注解如下
+//MUST NOT annotated with @Sharable.
+
+这就意味着ByteToMessageCodec不能被多个channel所共享的
+原因：因为该类的目标是：将ByteBuf转化为Message，意味着传进该handler的数据还未被处理过。
+所以传过来的ByteBuf可能并不是完整的数据，如果共享则会出现问题.
+如果想要共享，需要怎么办呢？
+继承MessageToMessageDecoder即可。
+该类的目标是：将已经被处理的完整数据再次被处理。
+传过来的Message如果是被处理过的完整数据，那么被共享也就不会出现问题了，也就可以使用@Sharable注解了。
+实现方式与ByteToMessageCodec类似,请看MessageCodecShareable.java
+
